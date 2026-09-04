@@ -1358,10 +1358,12 @@ function bindNoPurchasePrompt(cid){
 
 /* G1–G3 Visit capture: one-active-question cards.
    Card1 Result → Card2 Product (direct chips) → Card3 Reaction →
-   (if rejected) Card4 Rejection reason → Card «محصول دیگری؟».
+   (if rejected) Card4 Rejection reason →
+   (if still_stock) Card4b Stock source → Card «محصول دیگری؟».
    offeredProducts only stores complete entries (product + reaction;
-   rejected requires rejectionReason). Partial in-progress product is dropped
-   on Save & Finish. Backward-compatible: old visits without offeredProducts OK.
+   rejected requires rejectionReason; still_stock also requires stockSource).
+   Partial in-progress product is dropped on Save & Finish.
+   Backward-compatible: old visits without offeredProducts / stockSource OK.
    Does not touch invoice/stock/FIFO. */
 function openAddVisit(cid){
   const RESULT_CHIPS = [
@@ -1381,7 +1383,13 @@ function openAddVisit(cid){
     { value: 'competitor', label: 'رقیب' },
     { value: 'unavailable', label: 'موجود نبود' },
     { value: 'no_need', label: 'نیاز نداشت' },
+    { value: 'still_stock', label: 'موجود داشت' },
     { value: 'other', label: 'سایر' },
+  ];
+  const STOCK_SOURCE_CHIPS = [
+    { value: 'ours', label: 'از ما' },
+    { value: 'competitor', label: 'از رقیب' },
+    { value: 'unknown', label: 'نمی‌دانم' },
   ];
 
   const activeProducts = (data.products || []).filter(function (p) {
@@ -1410,7 +1418,8 @@ function openAddVisit(cid){
     offeredProducts: [], // complete only
     pendingProductId: null,
     pendingReaction: null,
-    step: 'result', // result | product | reaction | rejectReason | another | done
+    pendingRejectionReason: null,
+    step: 'result', // result | product | reaction | rejectReason | stockSource | another | done
   };
   const stage = document.getElementById('visit-card-stage');
 
@@ -1419,7 +1428,29 @@ function openAddVisit(cid){
       if (!op || !op.productId) return false;
       if (op.reaction !== 'accepted' && op.reaction !== 'rejected' && op.reaction !== 'deferred') return false;
       if (op.reaction === 'rejected' && !op.rejectionReason) return false;
+      // stockSource only valid/required with still_stock; other reasons must not carry it
+      if (op.reaction === 'rejected' && op.rejectionReason === 'still_stock') {
+        if (op.stockSource !== 'ours' && op.stockSource !== 'competitor' && op.stockSource !== 'unknown') return false;
+      }
       return true;
+    }).map(function (op) {
+      // Data integrity: strip stockSource unless still_stock
+      if (op.reaction === 'rejected' && op.rejectionReason === 'still_stock') {
+        return {
+          productId: op.productId,
+          reaction: 'rejected',
+          rejectionReason: 'still_stock',
+          stockSource: op.stockSource,
+        };
+      }
+      if (op.reaction === 'rejected') {
+        return {
+          productId: op.productId,
+          reaction: 'rejected',
+          rejectionReason: op.rejectionReason,
+        };
+      }
+      return { productId: op.productId, reaction: op.reaction };
     });
   }
 
@@ -1468,6 +1499,14 @@ function openAddVisit(cid){
           '<div class="q-title">چرا نخرید؟ <span class="sub" style="display:inline;font-weight:500;">(' + esc(productLabel(state.pendingProductId)) + ')</span></div>' +
           '<div class="chip-wrap">' + REJECTION_REASON_CHIPS.map(function (o) {
             return chipBtn('rejectReason', o.value, o.label);
+          }).join('') + '</div>' +
+        '</div>';
+    } else if (step === 'stockSource') {
+      html =
+        '<div class="visit-card visit-card-enter" data-visit-step="stockSource">' +
+          '<div class="q-title">این موجودی از کجا بود؟ <span class="sub" style="display:inline;font-weight:500;">(' + esc(productLabel(state.pendingProductId)) + ')</span></div>' +
+          '<div class="chip-wrap">' + STOCK_SOURCE_CHIPS.map(function (o) {
+            return chipBtn('stockSource', o.value, o.label);
           }).join('') + '</div>' +
         '</div>';
     } else if (step === 'another') {
@@ -1521,6 +1560,7 @@ function openAddVisit(cid){
         }
         if (group === 'reaction') {
           state.pendingReaction = value;
+          state.pendingRejectionReason = null;
           if (value === 'rejected') {
             state.step = 'rejectReason';
             renderStage();
@@ -1534,12 +1574,20 @@ function openAddVisit(cid){
           }
           state.pendingProductId = null;
           state.pendingReaction = null;
+          state.pendingRejectionReason = null;
           state.step = 'another';
           renderStage();
           return;
         }
         if (group === 'rejectReason') {
+          if (value === 'still_stock') {
+            state.pendingRejectionReason = 'still_stock';
+            state.step = 'stockSource';
+            renderStage();
+            return;
+          }
           if (state.pendingProductId && state.pendingReaction === 'rejected' && value) {
+            // Non-still_stock reasons: never attach stockSource
             state.offeredProducts.push({
               productId: state.pendingProductId,
               reaction: 'rejected',
@@ -1548,6 +1596,28 @@ function openAddVisit(cid){
           }
           state.pendingProductId = null;
           state.pendingReaction = null;
+          state.pendingRejectionReason = null;
+          state.step = 'another';
+          renderStage();
+          return;
+        }
+        if (group === 'stockSource') {
+          if (
+            state.pendingProductId &&
+            state.pendingReaction === 'rejected' &&
+            state.pendingRejectionReason === 'still_stock' &&
+            (value === 'ours' || value === 'competitor' || value === 'unknown')
+          ) {
+            state.offeredProducts.push({
+              productId: state.pendingProductId,
+              reaction: 'rejected',
+              rejectionReason: 'still_stock',
+              stockSource: value,
+            });
+          }
+          state.pendingProductId = null;
+          state.pendingReaction = null;
+          state.pendingRejectionReason = null;
           state.step = 'another';
           renderStage();
           return;
@@ -1556,6 +1626,7 @@ function openAddVisit(cid){
           if (value === 'yes') {
             state.pendingProductId = null;
             state.pendingReaction = null;
+            state.pendingRejectionReason = null;
             state.step = 'product';
             renderStage();
             return;

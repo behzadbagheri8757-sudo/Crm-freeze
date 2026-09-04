@@ -543,7 +543,9 @@ function visitOverdueDays(cid){
 /* Valid rejection reason codes — mirrors REJECTION_REASON_CHIPS in app.js /
    the rr label map in views/visits.js & views/customer.js. Kept local to
    calc.js (read-only lookup only); not a new stored schema. */
-var _BEHAVIOR_VALID_REJECTION_REASONS = { price:1, quality:1, competitor:1, unavailable:1, no_need:1, other:1 };
+var _BEHAVIOR_VALID_REJECTION_REASONS = { price:1, quality:1, competitor:1, unavailable:1, no_need:1, still_stock:1, other:1 };
+/* Valid stockSource codes when rejectionReason === 'still_stock'. Independent from rejectionReason=competitor. */
+var _BEHAVIOR_VALID_STOCK_SOURCES = { ours:1, competitor:1, unknown:1 };
 
 /** Same date-diff mechanism as the avgIntervalDays block above (parseISODateParts,
  * falling back to new Date(iso) on parse failure) — no new timezone handling invented.
@@ -584,6 +586,7 @@ function _behaviorOfferedProductStats(visits){
           rejectedCount: 0,
           deferredCount: 0,
           rejectionReasons: {},
+          stillStockSources: { ours: 0, competitor: 0, unknown: 0 },
           lastOfferedDate: null,
         };
         order.push(pid);
@@ -599,6 +602,10 @@ function _behaviorOfferedProductStats(visits){
         const reason = op.rejectionReason;
         if(reason && _BEHAVIOR_VALID_REJECTION_REASONS[reason]){
           st.rejectionReasons[reason] = (st.rejectionReasons[reason] || 0) + 1;
+        }
+        // still_stock + stockSource breakdown (independent from rejectionReason=competitor)
+        if(reason === 'still_stock' && op.stockSource && _BEHAVIOR_VALID_STOCK_SOURCES[op.stockSource]){
+          st.stillStockSources[op.stockSource] = (st.stillStockSources[op.stockSource] || 0) + 1;
         }
         // invalid/empty reason: counted in rejectedCount above, just not aggregated by reason
       }
