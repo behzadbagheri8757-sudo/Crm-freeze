@@ -20,9 +20,9 @@
   --color-accent:#C89B3C;
   --color-accent-dark:#A77A24;
   --color-accent-soft:#F0EDE8;
-  --color-bg:#FCFCFA;
+  --color-bg:#F5F4F1;
   --color-surface:#FFFFFF;
-  --color-surface-2:#F3F1ED;
+  --color-surface-2:#F8F7F4;
   --color-border:#E6E4DF;
   --color-text:#1F2429;
   --color-text-muted:#6F767C;
@@ -251,6 +251,39 @@ h3.sub-title{
   min-height:52px;
 }
 .ledger-row:last-child{border-bottom:none;}
+
+/* Customer 360 — Unified Summary block: one decision block combining
+   riskLevel (border accent, same language as Customer Radar), the
+   existing customerStory sentence, and the existing next-action text.
+   No new score/health model — purely a visual merge of frozen outputs. */
+.cust-summary{
+  background:#fff;
+  border:1px solid #E8E6E1;
+  border-inline-start:3px solid transparent;
+  border-radius:12px;
+  padding:12px 14px;
+  margin-bottom:14px;
+  box-shadow:0 3px 10px rgba(26,38,52,.04);
+}
+.cust-summary-story{font-size:.92rem;line-height:1.75;color:var(--ink);}
+.cust-summary-action{font-size:.88rem;line-height:1.75;color:var(--ink);margin-top:6px;padding-top:6px;border-top:1px dotted var(--line);}
+.cust-summary-action-label{font-weight:800;color:var(--olive-dark);}
+
+/* Customer 360 — primary vs secondary action tiers (frequency-based),
+   same buttons/handlers, just grouped by how often they're used. */
+.cust-actions-primary{gap:8px;}
+.cust-actions-primary .btn{flex:1;min-width:0;}
+.cust-actions-secondary{gap:6px;flex-wrap:wrap;}
+.cust-actions-secondary .btn{opacity:.92;}
+
+/* Customer Radar — ONE existing signal per row (riskLevel from the
+   frozen Priority Engine), shown as a single border accent. No badges,
+   no dots, no chips stacked alongside it. */
+.radar-row{border-inline-start:3px solid transparent;padding-inline-start:9px;}
+.radar-risk-critical{border-inline-start-color:var(--rust);}
+.radar-risk-high{border-inline-start-color:var(--amber);}
+.radar-risk-medium{border-inline-start-color:#C9C6BE;}
+.radar-row .sub{color:var(--ink-soft);font-size:.78rem;}
 .ledger-row .name{
   font-weight:700;
   font-size:1rem;
@@ -724,9 +757,18 @@ body[data-page="dashboard"] #nav{
 }
 
 /* ===================== SETTINGS / REPORTS ===================== */
-/* .settings-warn removed here on 2026-08-20: fully and permanently shadowed
-   by the settings view styles (loads after this file, sets
-   every property this rule set). Verified zero live usage elsewhere. */
+/* settings-warn: restored for Settings UI (Final Retouch) — visual only */
+.settings-warn{
+  margin:0 0 12px;
+  padding:10px 12px;
+  font-size:.8rem;
+  line-height:1.55;
+  color:#7A4A12;
+  background:#FBF3E6;
+  border:1px solid #E8D4B0;
+  border-radius:8px;
+  text-align:right;
+}
 .settings-section{margin-bottom:22px;}
 .settings-section h3{
   font-size:.95rem;
@@ -1815,7 +1857,47 @@ h2.section-title::after{border-color:#E4E4E0;}
 .dashboard-eyebrow{margin:2px 0 14px;font-size:.7rem;color:#6F767C;font-weight:700;}
 .dashboard-shell > .section-title{margin:2px 0 6px;}
 
-/* KPI cards */
+/* Business Status — ONE coherent strip: target box + a compact secondary
+   stat row underneath, sharing the same visual block instead of a
+   separate KPI card grid. No new figures, no new calculations — same
+   metrics (mtdProfit / inventoryValue / customerDebt) that previously
+   lived in .dash-kpis, presented as plain label/value pairs. */
+.biz-status{margin-bottom:18px;}
+.biz-status-secondary{
+  display:flex;
+  align-items:stretch;
+  gap:0;
+  margin-top:8px;
+  background:#fff;
+  border:1px solid #E8E6E1;
+  border-radius:14px;
+  box-shadow:0 3px 10px rgba(26,38,52,.04);
+  overflow:hidden;
+}
+.biz-stat{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  padding:10px 12px;
+  text-decoration:none;
+  color:inherit;
+  border-inline-start:1px solid #EEECE7;
+}
+.biz-stat:first-child{border-inline-start:none;}
+.biz-stat-label{font-size:.66rem;font-weight:600;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.biz-stat-value{font-size:.92rem;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.biz-stat-value.debt{color:var(--rust);}
+.biz-stat-link{cursor:pointer;}
+.biz-stat-link:active{background:#FBFAF7;}
+@media (max-width:360px){
+  .biz-stat{padding:8px 8px;}
+  .biz-stat-label{font-size:.6rem;}
+  .biz-stat-value{font-size:.82rem;}
+}
+
+/* KPI cards (legacy grid — no longer used on Dashboard, kept for reference) */
 .dash-kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
 .dash-kpi{position:relative;background:#fff;border:1px solid #E8E6E1;border-radius:16px;padding:13px 13px 12px;box-shadow:0 4px 12px rgba(26,38,52,.05);min-width:0;}
 .dash-kpi::before{content:"";position:absolute;right:0;top:12px;bottom:12px;width:3px;border-radius:3px 0 0 3px;background:#15273C;}
@@ -2843,53 +2925,55 @@ a.dash-tile .dash-sub{font-size:.58rem;margin-top:2px;}
 /* Quick Actions: compact real-action buttons (not navigation tiles).
    Deliberately smaller/denser than the old dash-grid tiles, and visually
    distinct via the warm icon-frame, so they read as "do a thing" not "go somewhere". */
-.dash-quick-actions{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:9px;
-}
-.dash-qa-btn{
+/* Quick Actions bar — compact horizontal row (not a 2x2 card grid).
+   Same 4 actions, same handlers (data-qa / href), presentation only. */
+.dash-qa-bar{
   display:flex;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  gap:8px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.dash-qa-bar::-webkit-scrollbar{display:none;}
+.dash-qa-bar .dash-qa-btn{
+  display:flex;
+  flex-direction:column;
   align-items:center;
-  gap:9px;
-  padding:11px 12px;
+  justify-content:center;
+  gap:5px;
+  flex:1 0 auto;
+  min-width:72px;
+  padding:10px 8px;
   background:#fff;
   border:1px solid #E8E6E1;
-  border-radius:14px;
-  box-shadow:0 3px 10px rgba(26,38,52,.035);
+  border-radius:13px;
+  box-shadow:0 2px 7px rgba(26,38,52,.03);
   text-decoration:none;
   color:#1F2429;
   font-family:inherit;
-  text-align:right;
+  text-align:center;
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
   transition:transform .1s ease, background-color .1s ease;
 }
-.dash-qa-btn:active{transform:scale(.97);background:#FBFAF7;}
-.dash-qa-ico{
+.dash-qa-bar .dash-qa-btn:active{transform:scale(.97);background:#FBFAF7;}
+.dash-qa-bar .dash-qa-ico{
   flex:none;
-  width:34px;height:34px;
-  border-radius:11px;
+  width:30px;height:30px;
+  border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   background:linear-gradient(160deg,rgba(200,155,60,.16) 0%,rgba(200,155,60,.09) 100%);
   border:1px solid rgba(184,134,44,.12);
-  box-shadow:0 2px 5px rgba(168,122,36,.14);
   color:#A77A24;
 }
-.dash-qa-ico svg{width:17px;height:17px;stroke-width:1.7;display:block;}
-.dash-qa-label{
-  font-size:.74rem;
-  font-weight:750;
+.dash-qa-bar .dash-qa-ico svg{width:16px;height:16px;stroke-width:1.7;display:block;}
+.dash-qa-bar .dash-qa-label{
+  font-size:.68rem;
+  font-weight:700;
   color:#1F2429;
-  line-height:1.3;
-  min-width:0;
-}
-@media (max-width:380px){
-  .dash-quick-actions{gap:7px;}
-  .dash-qa-btn{padding:9px 10px;gap:8px;}
-  .dash-qa-ico{width:31px;height:31px;border-radius:10px;}
-  .dash-qa-ico svg{width:15px;height:15px;}
-  .dash-qa-label{font-size:.69rem;}
+  line-height:1.25;
+  white-space:nowrap;
 }
 @media (prefers-reduced-motion:reduce){
   .dash-qa-btn{transition:none;}
