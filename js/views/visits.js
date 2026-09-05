@@ -93,38 +93,22 @@
     listEl.innerHTML = rows.map(r => {
       const v = r.visit;
       const cls = resultClass(v.result);
+      const ordered = v.ordered || v.result === VISIT_RESULTS[0];
+      const primaryCtx = v.nextAction || v.reason || v.note || '';
       const scoreBit = (typeof v.score === 'number')
-        ? `<span class="sub">امتیاز ارزیابی: ${v.score} از ۱۰۰</span>`
+        ? ` · امتیاز ${v.score}`
         : '';
-      const extraBits = [];
-      if (v.reason) extraBits.push('دلیل: ' + v.reason);
-      if (v.nextAction) extraBits.push('اقدام: ' + v.nextAction);
-      if (v.opportunity) extraBits.push('فرصت (مشاهده): ' + v.opportunity);
-      if (v.threat) extraBits.push('تهدید (مشاهده): ' + v.threat);
-      if (Array.isArray(v.tags) && v.tags.length) extraBits.push('برچسب: ' + v.tags.join('، '));
-      if (Array.isArray(v.offeredProducts) && v.offeredProducts.length) {
-        const rx = { accepted: 'قبول', rejected: 'رد', deferred: 'بعداً' };
-        const rr = { price: 'قیمت', quality: 'کیفیت', competitor: 'رقیب', unavailable: 'ناموجود', no_need: 'عدم نیاز', other: 'سایر' };
-        const bits = v.offeredProducts.map(function (op) {
-          const prod = (typeof data !== 'undefined' && data.products) ? data.products.find(function (p) { return p.id === op.productId; }) : null;
-          const name = prod ? prod.name : (op.productId || '—');
-          let s = name + ' (' + (rx[op.reaction] || op.reaction || '—') + ')';
-          if (op.reaction === 'rejected' && op.rejectionReason) s += ' — ' + (rr[op.rejectionReason] || op.rejectionReason);
-          return s;
-        });
-        extraBits.push('پیشنهاد: ' + bits.join('؛ '));
-      }
-      if (v.note) extraBits.push(v.note);
-      const extraHtml = extraBits.map(x => `<span class="sub">${esc(x)}</span>`).join('');
-      return `<a class="ledger-row" href="#/customer?id=${encodeURIComponent(r.customerId)}" style="text-decoration:none;color:inherit;">
-        <span class="name">${esc(r.customerName)}
-          <span class="sub">${faDate(v.date)}${v.time ? ' — ' + esc(v.time) : ''}${r.region ? ' — ' + esc(r.region) : ''}</span>
+      return `<a class="ledger-row tx-row" href="#/customer?id=${encodeURIComponent(r.customerId)}" style="text-decoration:none;color:inherit;">
+        <span class="name">
+          <span class="tx-row-title">${esc(r.customerName)}</span>
+          <span class="sub">${faDate(v.date)}${v.time ? ' ' + esc(v.time) : ''}${r.region ? ' · ' + esc(r.region) : ''}${scoreBit}</span>
           <span class="sub ${cls}">${esc(v.result || 'ویزیت')}</span>
-          ${scoreBit}
-          ${extraHtml}
+          ${primaryCtx ? `<span class="sub tx-row-ctx">${esc(primaryCtx)}</span>` : ''}
         </span>
         <span class="filler"></span>
-        <span class="amount ${cls}" style="font-size:.8rem;">${v.ordered || v.result === VISIT_RESULTS[0] ? 'سفارش' : 'ویزیت'}</span>
+        <span class="amount tx-row-amount ${cls}">
+          <span class="tx-row-total" style="font-size:.82rem;">${ordered ? 'سفارش' : 'ویزیت'}</span>
+        </span>
       </a>`;
     }).join('');
   }
@@ -163,15 +147,15 @@
         ${chip('closed','فروشگاه بسته بود')}
         ${chip('just','فقط بازدید')}
       </div>
-      <div class="field">
-        <label>مرتب‌سازی</label>
-        <select id="visit-sort">
+      <div class="tx-toolbar">
+        <label class="tx-toolbar-label" for="visit-sort">مرتب‌سازی</label>
+        <select id="visit-sort" class="tx-toolbar-select">
           <option value="newest" ${visitSort === 'newest' ? 'selected' : ''}>جدیدترین</option>
           <option value="oldest" ${visitSort === 'oldest' ? 'selected' : ''}>قدیمی‌ترین</option>
         </select>
       </div>
       <div id="visit-summary" class="cards" style="margin-bottom:12px;"></div>
-      <div id="visit-list"></div>
+      <div id="visit-list" class="tx-list"></div>
     `;
 
     const searchEl = document.getElementById('visit-search');
