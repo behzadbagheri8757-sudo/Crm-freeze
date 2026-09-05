@@ -106,34 +106,40 @@
           const offStyle = isOff
             ? 'cursor:pointer;opacity:.42;filter:grayscale(.35);'
             : 'cursor:pointer;';
+          const statusExtra =
+            st.key === 'low' && p.minStock ? ' (حداقل ' + p.minStock + ')' : '';
           return (
-            '<div class="ledger-row" data-edit-product="' +
+            '<div class="ledger-row tx-row" data-edit-product="' +
             esc(p.id) +
             '" style="' +
             offStyle +
             '">' +
             '<span class="name">' +
+            '<span class="tx-row-title">' +
             esc(p.name) +
             inactiveBadge +
+            '</span>' +
             '<span class="sub">' +
             esc(p.category || '—') +
-            ' — واحد: ' +
+            ' · ' +
             esc(String(unit)) +
-            ' — خرید: ' +
+            ' · خرید ' +
             toman(p.buy) +
-            ' / فروش: ' +
+            ' / فروش ' +
             toman(p.retail || p.sell || 0) +
             '</span>' +
             '<span class="sub ' +
             st.cls +
             '">' +
             st.label +
-            (st.key === 'low' && p.minStock ? ' (حداقل ' + p.minStock + ')' : '') +
+            statusExtra +
             '</span></span>' +
             '<span class="filler"></span>' +
-            '<span class="amount">' +
+            '<span class="amount tx-row-amount">' +
+            '<span class="tx-row-total">' +
             (p.stockQty || 0) +
-            '<span class="sub" style="display:block;">ارزش: ' +
+            '</span>' +
+            '<span class="tx-row-meta">ارزش ' +
             toman(val) +
             ' ت</span></span></div>'
           );
@@ -171,8 +177,9 @@
       chip('zero', 'ناموجود') +
       chip('neg', 'منفی') +
       '</div>' +
-      '<div class="field"><label>مرتب‌سازی</label>' +
-      '<select id="product-sort">' +
+      '<div class="tx-toolbar">' +
+      '<label class="tx-toolbar-label" for="product-sort">مرتب‌سازی</label>' +
+      '<select id="product-sort" class="tx-toolbar-select">' +
       '<option value="name"' +
       (prodSort === 'name' ? ' selected' : '') +
       '>نام</option>' +
@@ -186,7 +193,7 @@
       (prodSort === 'valueDesc' ? ' selected' : '') +
       '>ارزش موجودی</option>' +
       '</select></div>' +
-      '<div id="product-list"></div>';
+      '<div id="product-list" class="tx-list"></div>';
 
     const searchEl = document.getElementById('product-search');
     searchHandler = function (e) {

@@ -608,63 +608,93 @@
       const itemsHint = (p.items && p.items.length) ? (p.items.length + ' قلم') :
         (p.productId ? ((data.products.find(x => x.id === p.productId) || {}).name || 'کالا') : (p.desc || 'خرید'));
       const retBtn = canReturn
-        ? '<br><button type="button" class="btn secondary small" data-return-purchase="' + esc(p.id) + '">برگشت</button>'
+        ? '<button type="button" class="btn secondary small tx-status-btn" data-return-purchase="' + esc(p.id) + '">برگشت</button>'
         : '';
-      return `<div class="ledger-row">
-        <span class="name">${esc(String(itemsHint))}
-          <span class="sub">${faDate(p.date)}${ret ? ' — برگشت: ' + toman(ret) + ' ت' : ''}</span>
+      return `<div class="ledger-row tx-row">
+        <span class="name">
+          <span class="tx-row-title">${esc(String(itemsHint))}</span>
+          <span class="sub">${faDate(p.date)}${ret ? ' · برگشت ' + toman(ret) + ' ت' : ''}</span>
         </span>
         <span class="filler"></span>
-        <span class="amount">${toman(net)} ت${retBtn}</span>
+        <span class="amount tx-row-amount">
+          <span class="tx-row-total">${toman(net)} ت</span>
+          ${retBtn}
+        </span>
       </div>`;
     }).join('') : '<div class="empty" style="padding:12px 0;">خریدی ثبت نشده</div>';
 
-    const payRows = payments.length ? payments.map(p => `
-      <div class="ledger-row">
-        <span class="name">پرداخت<span class="sub">${faDate(p.date)}</span></span>
+    const payRows = payments.length ? payments.map((p, pidx) => {
+      const isCheck = p.method === 'check';
+      const face = isCheck && typeof p.faceAmount === 'number' ? p.faceAmount : p.amount;
+      const stLabel = isCheck
+        ? ((p.status === 'cleared') ? 'پرداخت‌شده' : (p.status === 'bounced') ? 'برگشتی' : 'در جریان')
+        : (p.method === 'cash' ? 'نقد/کارت/انتقال' : 'پرداخت');
+      const stCls = isCheck
+        ? (p.status === 'cleared' ? 'accent-olive' : (p.status === 'bounced' ? 'accent-rust' : 'accent-amber'))
+        : '';
+      const checkMeta = isCheck
+        ? ((p.checkNumber ? 'ش ' + p.checkNumber : '') +
+           (p.dueDate ? (p.checkNumber ? ' · ' : '') + 'سررسید ' + faDate(p.dueDate) : ''))
+        : '';
+      const delBtn = '<button type="button" class="btn small danger tx-status-btn" data-sup-pay-del="' + pidx + '">حذف</button>';
+      const checkBtns = isCheck
+        ? ('<button type="button" class="btn small secondary tx-status-btn ' + stCls + '" data-sup-check-status="' + pidx + '">' + stLabel + '</button>' +
+           '<button type="button" class="btn small secondary tx-status-btn" data-sup-check-edit="' + pidx + '">ویرایش</button>')
+        : ('<span class="tx-row-meta">' + stLabel + '</span>');
+      return `<div class="ledger-row tx-row" style="cursor:default;align-items:flex-start;">
+        <span class="name">
+          <span class="tx-row-title">${isCheck ? 'چک' : 'پرداخت'}</span>
+          <span class="sub">${faDate(p.date)}${checkMeta ? ' · ' + esc(checkMeta) : ''}${p.note ? ' · ' + esc(p.note) : ''}</span>
+        </span>
         <span class="filler"></span>
-        <span class="amount">${toman(p.amount)} ت</span>
-      </div>
-    `).join('') : '<div class="empty" style="padding:12px 0;">پرداختی ثبت نشده</div>';
+        <span class="amount tx-row-amount">
+          <span class="tx-row-total">${toman(isCheck ? face : p.amount)} ت</span>
+          ${checkBtns}
+          ${delBtn}
+        </span>
+      </div>`;
+    }).join('') : '<div class="empty" style="padding:12px 0;">پرداختی ثبت نشده</div>';
 
     root.innerHTML = `
       <div class="btn-row" style="margin-bottom:10px;">
         <a class="btn secondary small" href="${suppliersHref()}">← تامین‌کنندگان</a>
       </div>
 
-      <div class="card" style="margin-bottom:12px;">
-        <div style="font-size:1.15rem;font-weight:800;color:var(--olive-dark);margin-bottom:8px;">${esc(s.name)}${s.active === false ? ' <span class="badge pending">غیرفعال</span>' : ''}</div>
-        <div style="font-size:.88rem;line-height:1.85;">
-          ${s.phone ? '<div>تلفن: ' + esc(s.phone) + '</div>' : ''}
-        </div>
-        <div style="margin-top:12px;padding-top:10px;border-top:1px dotted var(--line);">
-          <div class="label">مانده حساب</div>
-          <div class="value ${color}" style="font-size:1.25rem;">${balanceLine}</div>
+      <!-- IDENTITY -->
+      <div class="tx-identity card">
+        <div class="tx-identity-title">${esc(s.name)}${s.active === false ? ' <span class="badge pending">غیرفعال</span>' : ''}</div>
+        <div class="tx-identity-meta">
+          ${s.phone ? '<span>تلفن: ' + esc(s.phone) + '</span>' : '<span class="sub">بدون تلفن</span>'}
         </div>
       </div>
 
-      <div class="cards" style="margin-bottom:14px;">
+      <!-- FINANCIAL SUMMARY -->
+      <div class="tx-finance cards">
+        <div class="card wide">
+          <div class="label">مانده حساب</div>
+          <div class="value ${color}">${balanceLine}</div>
+        </div>
         <div class="card"><div class="label">جمع خرید</div><div class="value">${toman(t.purchaseTotal)} ت</div></div>
         <div class="card"><div class="label">پرداخت‌ها</div><div class="value">${toman(t.payTotal)} ت</div></div>
         <div class="card"><div class="label">برگشت از خرید</div><div class="value">${toman(t.returnTotal)} ت</div></div>
         <div class="card"><div class="label">مانده اولیه</div><div class="value">${toman(t.openingBalance)} ت</div></div>
-        <div class="card"><div class="label">تعداد خرید</div><div class="value">${purchases.length}</div></div>
-        <div class="card"><div class="label">تعداد پرداخت</div><div class="value">${payments.length}</div></div>
       </div>
 
-      <h3 class="sub-title">عملیات سریع</h3>
-      <div class="btn-row" style="margin-bottom:16px;">
+      <!-- PRIMARY ACTIONS -->
+      <div class="btn-row tx-actions-primary" style="margin-bottom:14px;">
         <button type="button" class="btn small" id="add-purchase">+ خرید جدید</button>
         <button type="button" class="btn small secondary" id="add-suppay">+ پرداخت</button>
         <button type="button" class="btn small secondary" id="edit-supplier">ویرایش</button>
-        <button type="button" class="btn small secondary" id="toggle-supplier-active">${s.active === false ? 'فعال‌سازی تأمین‌کننده' : 'غیرفعال‌سازی تأمین‌کننده'}</button>
+        <button type="button" class="btn small secondary" id="toggle-supplier-active">${s.active === false ? 'فعال‌سازی' : 'غیرفعال‌سازی'}</button>
       </div>
 
+      <!-- PURCHASES -->
       <h3 class="sub-title">خریدها (${purchases.length})</h3>
-      ${purchaseRows}
+      <div class="tx-list">${purchaseRows}</div>
 
+      <!-- PAYMENTS -->
       <h3 class="sub-title">پرداخت‌ها (${payments.length})</h3>
-      ${payRows}
+      <div class="tx-list">${payRows}</div>
     `;
 
     // Re-attach all dynamic buttons
