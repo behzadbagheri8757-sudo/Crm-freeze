@@ -132,14 +132,21 @@
       list.innerHTML = `<div class="empty">${prospectState.shops.length ? 'موردی پیدا نشد' : 'هنوز مغازه‌ای ثبت نشده. با + یا «ثبت مغازه» شروع کنید.'}</div>`;
       return;
     }
-    list.innerHTML = rows.map(s => `
-      <a class="ledger-row" data-open-prospect="${esc(s.id)}" style="text-decoration:none;color:inherit;">
-        <span class="name">${esc(s.name)}${s.status === 'converted' ? ' ✅' : ''}
-          <span class="sub">${esc(getLocationDisplayString(s.locationId))} — ${prospectFaDate(s.updatedAt)}</span>
+    list.innerHTML = rows.map(s => {
+      const converted = s.status === 'converted';
+      return `
+      <a class="ledger-row tx-row" data-open-prospect="${esc(s.id)}" style="text-decoration:none;color:inherit;">
+        <span class="name">
+          <span class="tx-row-title">${esc(s.name)}${converted ? ' <span class="badge pending" style="font-size:.7em;">تبدیل‌شده</span>' : ''}</span>
+          <span class="sub">${esc(getLocationDisplayString(s.locationId))} · ${prospectFaDate(s.updatedAt)}</span>
         </span>
         <span class="filler"></span>
-        <span class="amount">${s.latestScore} ${rankPill(s.latestRank)}</span>
-      </a>`).join('');
+        <span class="amount tx-row-amount">
+          <span class="tx-row-total">${s.latestScore}</span>
+          <span class="tx-row-meta">${rankPill(s.latestRank)}</span>
+        </span>
+      </a>`;
+    }).join('');
     // Click listener is bound once in drawProspectsPage (not on every list re-render).
   }
 
@@ -179,8 +186,9 @@
         ${chip('A','رتبه A')}
         ${chip('B','رتبه B')}
       </div>
-      <div class="field"><label>مرتب‌سازی</label>
-        <select id="prospect-sort">
+      <div class="tx-toolbar">
+        <label class="tx-toolbar-label" for="prospect-sort">مرتب‌سازی</label>
+        <select id="prospect-sort" class="tx-toolbar-select">
           <option value="score_desc" ${pSort === 'score_desc' ? 'selected' : ''}>بیشترین امتیاز</option>
           <option value="score_asc" ${pSort === 'score_asc' ? 'selected' : ''}>کمترین امتیاز</option>
           <option value="name" ${pSort === 'name' ? 'selected' : ''}>نام</option>
@@ -188,11 +196,11 @@
         </select>
       </div>
       <div id="prospect-summary" class="cards" style="margin-bottom:10px;"></div>
-      <div id="p-loc-filter-row">${renderProspectLocFilterOptionsHTML()}</div>
+      <div id="p-loc-filter-row" class="field-ops-loc">${renderProspectLocFilterOptionsHTML()}</div>
       <div class="chip-row" style="margin-bottom:8px;">
         <button type="button" class="chip ${pLocFilter.unassigned ? 'active' : ''}" id="p-loc-filter-unassigned">بدون موقعیت</button>
       </div>
-      <div id="prospect-list"></div>
+      <div id="prospect-list" class="tx-list"></div>
     `;
 
     const searchEl = document.getElementById('prospect-search');

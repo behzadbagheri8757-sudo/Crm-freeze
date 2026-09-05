@@ -143,10 +143,10 @@
         <div class="eval-progress-bar" aria-hidden="true">
           <div class="eval-progress-fill" style="width:${((qIdx + (formState.answers[q.id] ? 1 : 0)) / totalQ) * 100}%"></div>
         </div>
-        <div class="eval-one-q card visit-card-enter">
+        <div class="eval-one-q card visit-card-enter field-eval-card">
           <div class="eval-q-progress">سؤال ${qIdx + 1} از ${totalQ}</div>
           <div class="q-title">${esc(q.label)}</div>
-          <div class="chip-wrap eval-q-options">${opts}</div>
+          <div class="chip-wrap eval-q-options field-eval-opts">${opts}</div>
           ${qIdx > 0 ? `<div class="eval-back-row"><button type="button" class="btn secondary small" id="eval-q-back">سؤال قبلی</button></div>` : ''}
         </div>
       `;
@@ -170,7 +170,7 @@
           <div class="label" style="margin-bottom:8px;">نتیجه این ویزیت (اختیاری)</div>
           <div class="chip-wrap">${tagHtml}</div>
         </div>
-        <div class="btn-row" style="margin-top:14px;">
+        <div class="btn-row tx-actions-primary" style="margin-top:14px;">
           <button type="button" class="btn secondary small" id="eval-q-back">بازگشت به سؤالات</button>
           <button type="button" class="btn" id="save-eval" disabled>${isVisit ? 'ثبت ویزیت' : 'ثبت مغازه'}</button>
         </div>
