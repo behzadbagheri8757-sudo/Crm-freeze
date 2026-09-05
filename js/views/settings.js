@@ -67,21 +67,22 @@
     }
 
     root.innerHTML = `
-      <h2 class="section-title">تنظیمات و بکاپ</h2>
+      <h2 class="section-title">تنظیمات</h2>
+      <p class="tx-hint">مدیریت سیستم، داده و امنیت — بدون تغییر منطق ذخیره‌سازی.</p>
 
-      <div class="settings-section">
-        <h3>Backup</h3>
+      <div class="settings-section mgmt-section">
+        <h3 class="mgmt-section-title">داده و بکاپ</h3>
         <div class="settings-warn">
           فایل JSON را در جایی امن نگه دارید (Files / ابر / کامپیوتر). روی iPhone معمولاً برگه Share و «Save to Files» باز می‌شود.
         </div>
-        <div class="btn-row">
+        <div class="btn-row tx-actions-primary">
           <button type="button" class="btn" id="export-json">دریافت Backup (JSON)</button>
           <button type="button" class="btn secondary" id="export-excel">خروجی اکسل</button>
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>Restore از فایل</h3>
+      <div class="settings-section mgmt-section">
+        <h3 class="mgmt-section-title">بازیابی از فایل</h3>
         <div class="settings-warn">
           بازیابی، اطلاعات فعلی را <b>جایگزین</b> می‌کند. قبل از جایگزینی، نسخهٔ فعلی به‌صورت خودکار برای «برگشت از بازیابی» ذخیره می‌شود.
         </div>
@@ -101,16 +102,16 @@
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>بکاپ خودکار داخلی</h3>
+      <div class="settings-section mgmt-section">
+        <h3 class="mgmt-section-title">بکاپ خودکار داخلی</h3>
         <div class="sub" style="margin-bottom:8px;font-size:.8rem;line-height:1.5;">
           برنامه در صورت استفاده، حداکثر هر ۱۲ ساعت یک نسخه از داده‌های CRM، FIFO، هدف فروش، ProspectScout و Intelligence داخل IndexedDB نگه می‌دارد (تا ۵ نسخه). این جایگزین Backup فایل JSON نیست.
         </div>
         <div class="card">${autoHtml}</div>
       </div>
 
-      <div class="settings-section">
-        <h3>موقعیت مکانی</h3>
+      <div class="settings-section mgmt-section">
+        <h3 class="mgmt-section-title">موقعیت مکانی</h3>
         <div class="sub" style="margin-bottom:8px;font-size:.8rem;line-height:1.5;">
           مدیریت ساختار منطقه › مسیر › محله، مشترک بین مشتریان و مغازه‌های بالقوه.
         </div>
@@ -119,9 +120,9 @@
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>آمار دادهٔ فعلی</h3>
-        <div class="cards">
+      <details class="tx-details mgmt-section">
+        <summary>آمار دادهٔ فعلی</summary>
+        <div class="cards" style="margin-top:10px;">
           <div class="card"><div class="label">مشتریان</div><div class="value">${(data.customers || []).length}</div></div>
           <div class="card"><div class="label">کالاها</div><div class="value">${(data.products || []).length}</div></div>
           <div class="card"><div class="label">فاکتورها</div><div class="value">${(data.invoices || []).length}</div></div>
@@ -130,10 +131,10 @@
           <div class="card"><div class="label">چک‌ها</div><div class="value">${(data.checks || []).length}</div></div>
           <div class="card wide"><div class="label">ویزیت مشتریان</div><div class="value">${visitCount}</div></div>
         </div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <h3>قفل PIN</h3>
+      <div class="settings-section mgmt-section">
+        <h3 class="mgmt-section-title">امنیت — قفل PIN</h3>
         <div class="sub" style="margin-bottom:8px;font-size:.8rem;line-height:1.5;">
           با فعال‌سازی PIN، بعد از خروج از برنامه یا رفتن به پس‌زمینه، برای ورود دوباره باید کد شش‌رقمی را وارد کنید. PIN روی همین دستگاه در localStorage ذخیره می‌شود (هش‌شده) و داخل Backup نیست.
         </div>
@@ -146,9 +147,9 @@
         </div>
       </div>
 
-      <div class="settings-section">
+      <div class="settings-section mgmt-section">
         <div class="settings-tech-row" id="open-tech-info" role="button" tabindex="0">
-          <span class="tech-label">⚙️ اطلاعات فنی</span>
+          <span class="tech-label">اطلاعات فنی</span>
           <span class="tech-chevron">‹</span>
         </div>
       </div>

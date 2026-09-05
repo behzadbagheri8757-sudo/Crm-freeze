@@ -180,9 +180,9 @@
         var prodName = productNameForOccurrence(o);
         var catLabel = categoryLabel(o.watchCategory);
         var reviewed = !!o.reason;
-        return '<div class="watch-list-row" data-watch-id="' + esc(o.id) + '" role="link" tabindex="0">' +
+        return '<div class="watch-list-row tx-row" data-watch-id="' + esc(o.id) + '" role="link" tabindex="0">' +
           '<div class="watch-list-main">' +
-            '<div class="watch-list-title">' + esc(prodName || catLabel) + '</div>' +
+            '<div class="watch-list-title tx-row-title">' + esc(prodName || catLabel) + '</div>' +
             (prodName ? '<div class="watch-list-sub">' + esc(catLabel) + '</div>' : '') +
           '</div>' +
           '<div class="watch-list-meta">' +
@@ -295,7 +295,7 @@
         '<div class="watch-detail-block watch-detail-reason"><div class="label">چرا این مورد نمایش داده شده؟</div><div class="watch-detail-value">' + esc(occ.generatedReason || 'نشانه‌ای از تغییر در رفتار خرید مشاهده شده است.') + '</div></div>' +
         reasonHtml +
       '</div>' +
-      '<div class="watch-detail-actions">' +
+      '<div class="watch-detail-actions tx-actions-primary">' +
         '<button type="button" class="btn primary" data-watch-reason-open="' + esc(occ.id) + '">' + (occ.reason ? 'ویرایش علت' : 'ثبت علت') + '</button>' +
         '<button type="button" class="btn secondary" data-watch-dismiss="' + esc(occ.id) + '">بستن هشدار</button>' +
       '</div>' +
