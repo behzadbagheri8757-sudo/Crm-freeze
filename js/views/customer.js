@@ -455,6 +455,31 @@
     const color = t.balance > 0 ? 'accent-rust' : t.balance < 0 ? 'accent-olive' : 'accent-olive';
     const balanceLine = t.balance === 0 ? word : word + ': ' + toman(Math.abs(t.balance)) + ' ت';
 
+    /* Unified Summary — visually combines three EXISTING, already-frozen
+       outputs (calculateCustomerPriority → riskLevel + customerStory,
+       and calculateCustomerAction → next action) into ONE decision block.
+       No new score, no new health model, no new thresholds: this is a
+       read-only merge of data the system already computes elsewhere
+       (the same functions power the Dashboard Action Queue). */
+    let unifiedSummaryHtml = '';
+    {
+      let priority = null, action = null;
+      try { if (typeof calculateCustomerPriority === 'function') priority = calculateCustomerPriority(c.id); } catch (eP) { priority = null; }
+      try { if (typeof calculateCustomerAction === 'function') action = calculateCustomerAction(c.id); } catch (eA) { action = null; }
+      const riskLevel = priority ? priority.riskLevel : null;
+      const storyText = (priority && priority.customerStory && priority.customerStory.summary) ? priority.customerStory.summary : '';
+      const hasAction = action && action.actionType !== 'no_action';
+      if (storyText || hasAction) {
+        unifiedSummaryHtml =
+          '<div class="cust-summary ' + (riskLevel ? 'radar-risk-' + esc(riskLevel) : '') + '">' +
+          (storyText ? '<div class="cust-summary-story">' + esc(storyText) + '</div>' : '') +
+          (hasAction
+            ? '<div class="cust-summary-action"><span class="cust-summary-action-label">اقدام بعدی:</span> ' + esc(action.action) + '</div>'
+            : '') +
+          '</div>';
+      }
+    }
+
     const invs = customerInvoices(c.id)
       .slice()
       .sort(function (a, b) {
@@ -601,12 +626,16 @@
     let behaviorHtml = '';
     if (typeof customerBehavior === 'function') {
       const b = customerBehavior(c.id);
+      // customerBehaviorSummary's own bullet lines now render lower on the
+      // page, inside "جزئیات کامل رفتار خرید" progressive disclosure —
+      // the headline decision (risk/opportunity + next action) already
+      // moved up into the Unified Summary block above the fold.
       let summaryHtml = '';
       const summary = customerBehaviorSummary(b);
       if (summary && summary.level === 'insufficient') {
         summaryHtml =
           '<div class="card wide" style="margin-bottom:10px;">' +
-          '<div class="label">خلاصهٔ وضعیت</div>' +
+          '<div class="label">خلاصهٔ رفتار خرید</div>' +
           '<div class="value" style="font-size:.9rem;">' +
           esc(summary.lines[0]) +
           '</div></div>';
@@ -622,7 +651,7 @@
         const extraLines = [summary.reminder, summary.action].filter(Boolean);
         summaryHtml =
           '<div class="card wide" style="margin-bottom:10px;">' +
-          '<div class="label">خلاصهٔ وضعیت</div>' +
+          '<div class="label">خلاصهٔ رفتار خرید</div>' +
           '<div class="value ' +
           bm[1] +
           '" style="font-size:1.05rem;">' +
@@ -709,12 +738,17 @@
             ? '—'
             : 'ویزیتی ثبت نشده';
 
+      const watchHtmlBlock = intelligenceWatchHtml(c.id);
       behaviorHtml =
-        '<h3 class="sub-title">رفتار خرید مشتری</h3>' +
-        summaryHtml +
-        intelligenceWatchHtml(c.id) +
+        '<h3 class="sub-title">رفتار خرید و هوش تجاری</h3>' +
+        (watchHtmlBlock
+          ? '<details open style="margin-bottom:12px;">' +
+            '<summary style="cursor:pointer;color:var(--olive-dark);font-weight:700;padding:6px 0;list-style:none;">هوش تجاری و هشدارها ▾</summary>' +
+            '<div style="margin-top:8px;">' + watchHtmlBlock + '</div></details>'
+          : '') +
         '<details style="margin-bottom:12px;">' +
         '<summary style="cursor:pointer;color:var(--olive-dark);font-weight:700;padding:6px 0;list-style:none;">جزئیات کامل رفتار خرید ▾</summary>' +
+        summaryHtml +
         '<div class="cards" style="margin-top:10px;margin-bottom:10px;">' +
         '<div class="card"><div class="label">اولین خرید</div><div class="value" style="font-size:.95rem;">' +
         (b.firstInvoiceDate ? faDate(b.firstInvoiceDate) : '—') +
@@ -802,6 +836,20 @@
       '" style="font-size:1.25rem;">' +
       balanceLine +
       '</div></div></div>' +
+      unifiedSummaryHtml +
+      '<h3 class="sub-title">عملیات</h3>' +
+      '<div class="btn-row cust-actions-primary" style="margin-bottom:8px;">' +
+      '<button type="button" class="btn" id="act-invoice">ثبت فاکتور</button>' +
+      '<button type="button" class="btn secondary" id="act-pay">ثبت پرداخت</button>' +
+      '<button type="button" class="btn secondary" id="act-visit">ثبت ویزیت</button>' +
+      '</div>' +
+      '<div class="btn-row cust-actions-secondary" style="margin-bottom:16px;">' +
+      '<button type="button" class="btn small secondary" id="act-check">ثبت چک</button>' +
+      '<button type="button" class="btn small secondary" id="act-edit">ویرایش مشتری</button>' +
+      '<button type="button" class="btn small secondary" id="act-location">اختصاص موقعیت</button>' +
+      '<button type="button" class="btn small secondary" id="act-print-statement">🖨️ صورت‌حساب</button>' +
+      '<button type="button" class="btn small secondary" id="act-toggle-active">' + (c.active === false ? 'فعال‌سازی مشتری' : 'غیرفعال‌سازی مشتری') + '</button>' +
+      '</div>' +
       '<div class="cards" style="margin-bottom:14px;">' +
       '<div class="card"><div class="label">مجموع خرید (فاکتورها)</div><div class="value">' +
       toman(t.invTotal) +
@@ -824,17 +872,6 @@
       '</div>' +
       behaviorHtml +
       productRejectionInsightsHtml(c.id) +
-      '<h3 class="sub-title">عملیات سریع</h3>' +
-      '<div class="btn-row" style="margin-bottom:16px;">' +
-      '<button type="button" class="btn small" id="act-invoice">ثبت فاکتور</button>' +
-      '<button type="button" class="btn small secondary" id="act-pay">ثبت پرداخت</button>' +
-      '<button type="button" class="btn small secondary" id="act-visit">ثبت ویزیت</button>' +
-      '<button type="button" class="btn small secondary" id="act-check">ثبت چک</button>' +
-      '<button type="button" class="btn small secondary" id="act-edit">ویرایش مشتری</button>' +
-      '<button type="button" class="btn small secondary" id="act-location">اختصاص موقعیت</button>' +
-      '<button type="button" class="btn small secondary" id="act-print-statement">🖨️ صورت‌حساب</button>' +
-      '<button type="button" class="btn small secondary" id="act-toggle-active">' + (c.active === false ? 'فعال‌سازی مشتری' : 'غیرفعال‌سازی مشتری') + '</button>' +
-      '</div>' +
       '<h3 class="sub-title">فاکتورها (' +
       invs.length +
       ')</h3>' +

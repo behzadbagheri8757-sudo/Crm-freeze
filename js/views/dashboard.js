@@ -92,7 +92,7 @@
     const gameShortcut = '<a class="section-action" href="#/game">Sales Game ←</a>';
     return '<div class="dashboard-block">' +
       '<div class="dashboard-block-head"><div class="dash-section-label"><span class="dash-section-ico" aria-hidden="true">' + ICO.quick + '</span><span>اقدام سریع</span></div>' + gameShortcut + '</div>' +
-      '<div class="dash-quick-actions">' +
+      '<div class="dash-quick-actions dash-qa-bar">' +
         '<button type="button" class="dash-qa-btn" data-qa="invoice"><span class="dash-qa-ico" aria-hidden="true">' + ICO.invoice + '</span><span class="dash-qa-label">فاکتور جدید</span></button>' +
         '<button type="button" class="dash-qa-btn" data-qa="payment"><span class="dash-qa-ico" aria-hidden="true">' + ICO.card + '</span><span class="dash-qa-label">ثبت دریافت</span></button>' +
         '<button type="button" class="dash-qa-btn" data-qa="visit"><span class="dash-qa-ico" aria-hidden="true">' + ICO.map + '</span><span class="dash-qa-label">ثبت ویزیت</span></button>' +
@@ -430,16 +430,15 @@
       '<div class="dashboard-shell">' +
       '<h2 class="section-title">داشبورد</h2>' +
       '<div class="dashboard-eyebrow">مرکز فرماندهی روزانه</div>' +
-      targetHtml(metrics) +
+      '<div class="biz-status">' +
+        targetHtml(metrics) +
+        '<div class="biz-status-secondary">' +
+          '<div class="biz-stat"><span class="biz-stat-label">سود این ماه</span><span class="biz-stat-value">' + money(metrics.mtdProfit) + '</span></div>' +
+          '<div class="biz-stat"><span class="biz-stat-label">ارزش موجودی</span><span class="biz-stat-value">' + money(invVal) + '</span></div>' +
+          '<a class="biz-stat biz-stat-link" href="#/customers?filter=debt"><span class="biz-stat-label">بدهی مشتریان</span><span class="biz-stat-value debt">' + money(g.customerDebt) + '</span></a>' +
+        '</div>' +
+      '</div>' +
       todaysActionsHtml() +
-      watchSummaryHtml() +
-      '<div class="dashboard-block">' + dashSectionHead(ICO.summary, 'خلاصه وضعیت', '', '') +
-      '<div class="dash-kpis">' +
-      '<a class="dash-kpi sales dash-kpi-link" href="#/reports"><div class="dash-kpi-label">فروش این ماه</div><div class="dash-kpi-value sales">' + money(metrics.mtdSales) + '</div><div class="dash-kpi-sub">' + deltaHtml(metrics.salesDeltaPct) + '</div><span class="dash-kpi-chevron" aria-hidden="true">‹</span></a>' +
-      '<div class="dash-kpi profit"><div class="dash-kpi-label">سود این ماه</div><div class="dash-kpi-value profit">' + money(metrics.mtdProfit) + '</div><div class="dash-kpi-sub">' + deltaHtml(metrics.profitDeltaPct) + '</div></div>' +
-      '<div class="dash-kpi inventory"><div class="dash-kpi-label">ارزش موجودی انبار</div><div class="dash-kpi-value">' + money(invVal) + '</div><div class="dash-kpi-sub">ارزش فعلی موجودی</div></div>' +
-      '<a class="dash-kpi debt dash-kpi-link" href="#/customers?filter=debt"><div class="dash-kpi-label">بدهی مشتریان</div><div class="dash-kpi-value debt">' + money(g.customerDebt) + '</div><div class="dash-kpi-sub">' + debtorList(9999).length + ' بدهکار فعال</div><span class="dash-kpi-chevron" aria-hidden="true">‹</span></a>' +
-      '</div></div>' +
       quickActionsHtml() +
       recentInvoicesHtml() + recentVisitsHtml() +
       '</div>';

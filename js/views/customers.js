@@ -35,10 +35,27 @@
     }
   }
 
+  /* Priority/story lookup — cached for the current view state and only
+     recomputed when the underlying data actually changes (mount, or a
+     ViewHost data-refresh), never on every keystroke/filter/sort click.
+     Read-only use of the existing frozen Priority Engine; no new
+     scoring, no new thresholds (see spec §9.6 performance rule). */
+  let custPriorityMap = null;
+  function buildPriorityLookup() {
+    const map = Object.create(null);
+    if (typeof calculateAllCustomerPriorities !== 'function') return map;
+    let list = [];
+    try { list = calculateAllCustomerPriorities() || []; } catch (e) { return map; }
+    list.forEach(function (p) { if (p && p.customerId) map[p.customerId] = p; });
+    return map;
+  }
+
   function renderCustomerListOnly() {
     const listEl = document.getElementById('customer-list');
     if (!listEl) return;
 
+    if (!custPriorityMap) custPriorityMap = buildPriorityLookup();
+    const priorityMap = custPriorityMap;
     let rows = (data.customers || []).slice();
     const q = (custQuery || '').trim().toLowerCase();
     if (q) {
@@ -98,20 +115,25 @@
         const word = balanceStatusWord(t.balance);
         const color = t.balance > 0 ? 'accent-rust' : t.balance < 0 ? 'accent-olive' : '';
         const amt = t.balance === 0 ? word : word + ': ' + toman(Math.abs(t.balance)) + ' ت';
-        const subParts = [];
-        if (c.phone) subParts.push(c.phone);
-        if (c.region) subParts.push(c.region);
-        if (c.address) subParts.push(c.address);
-        const sub = subParts.join(' — ');
+
+        // ONE existing signal per row: riskLevel from the frozen Priority
+        // Engine, plus its own one-line Persian story when available.
+        // No new scoring — read-only lookup of an already-computed value.
+        const pr = priorityMap[c.id] || null;
+        const riskLevel = pr ? pr.riskLevel : null;
+        const riskCls = riskLevel ? 'radar-risk-' + riskLevel : '';
+        const story = (pr && pr.customerStory && pr.customerStory.summary) ? pr.customerStory.summary : '';
+        const subLine = story || (c.region || '');
+
         return (
-          '<a class="ledger-row" data-open-customer="' +
+          '<a class="ledger-row radar-row tx-row ' + riskCls + '" data-open-customer="' +
           esc(c.id) +
           '" href="' +
           customerHref(c.id) +
           '" style="text-decoration:none;color:inherit;">' +
           '<span class="name">' +
           esc(c.name) +
-          (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') +
+          (subLine ? '<span class="sub">' + esc(subLine) + '</span>' : '') +
           '</span>' +
           '<span class="filler"></span>' +
           '<span class="amount ' +
@@ -266,9 +288,16 @@
     custFilter = (params && ['debt', 'settled', 'credit'].indexOf(params.filter) !== -1) ? params.filter : 'all';
     custSortByDebt = false;
     locFilter = { regionId: '', routeId: '', neighborhoodId: '', unassigned: false };
+    custPriorityMap = null; // fresh on entering the page
     drawCustomersPage(root);
 
-    refreshToken = ViewHost.setRefresh(renderCustomerListOnly);
+    // A real data refresh (invoice/payment/visit recorded elsewhere) can
+    // change risk/story output — invalidate the cache then, not on every
+    // keystroke render.
+    refreshToken = ViewHost.setRefresh(function () {
+      custPriorityMap = null;
+      renderCustomerListOnly();
+    });
 
     // openAddCustomer/openAddTransaction/etc. call render() after save — bind to list-only refresh.
     return function unmount() {
